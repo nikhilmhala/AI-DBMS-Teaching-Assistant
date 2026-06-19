@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>DBMS Assistant</title>
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Arial,Helvetica,sans-serif;
+}
+body{
+    background:#f4f6f9;
+}
+.header{
+    background:#1976d2;
+    color:white;
+    text-align:center;
+    padding:18px;
+    font-size:28px;
+    font-weight:bold;
+    position:sticky;
+    top:0;
+    z-index:1000;
+    box-shadow:0 2px 8px rgba(0,0,0,.15);
+}
+#chat{
+    padding:15px;
+    padding-bottom:220px;
+}
+.message{
+    display:flex;
+    margin:12px 0;
+}
+.user{
+    justify-content:flex-end;
+}
+.bot{
+    justify-content:flex-start;
+}
+.bubble{
+    max-width:80%;
+    padding:12px 16px;
+    border-radius:18px;
+    line-height:1.6;
+    white-space:pre-wrap;
+    word-wrap:break-word;
+}
+.user .bubble{
+    background:#1976d2;
+    color:white;
+    border-bottom-right-radius:5px;
+}
+.bot .bubble{
+    background:white;
+    color:#222;
+    border:1px solid #ddd;
+    border-bottom-left-radius:5px;
+}
+.input-container{
+    position:fixed;
+    left:0;
+    right:0;
+    bottom:55px;
+    background:white;
+    border-top:1px solid #ddd;
+    padding:10px;
+    display:flex;
+    gap:10px;
+    z-index:999;
+}
+#message{
+    flex:1;
+    border:1px solid #ccc;
+    border-radius:12px;
+    padding:14px;
+    font-size:16px;
+    outline:none;
+}
+#message:focus{
+    border-color:#1976d2;
+}
+button{
+    background:#1976d2;
+    color:white;
+    border:none;
+    border-radius:12px;
+    padding:0 20px;
+    cursor:pointer;
+    font-size:16px;
+}
+button:hover{
+    opacity:.9;
+}
+.typing{
+    color:#777;
+    font-style:italic;
+}
+.footer-credit{
+    text-align:center;
+    padding:25px 10px;
+    font-size:14px;
+    line-height:1.7;
+    color:#666;
+    margin-bottom:120px;
+}
+.footer-credit strong{
+    color:#1976d2;
+    font-size:15px;
+}
+@media(max-width:768px){
+    .header{
+        font-size:22px;
+        padding:15px;
+    }
+    #chat{
+        padding:10px;
+        padding-bottom:230px;
+    }
+    .bubble{
+        max-width:92%;
+        font-size:15px;
+    }
+    #message{
+        font-size:16px;
+    }
+    button{
+        min-width:75px;
+    }
+    .footer-credit{
+        margin-bottom:130px;
+    }
+}
+</style>
+</head>
+<body>
+<div class="header">
+🥗 DBMS Assistant
+</div>
+<div id="chat"></div>
+<div class="footer-credit">
+Designed & Hosted by <strong>Dr. Nikhil Mhala</strong><br>
+Assistant Professor, Computer Science & Engineering (AIML)
+</div>
+<div class="input-container">
+<input
+type="text"
+id="message"
+placeholder="Ask me anything about nutrition..."
+autocomplete="off">
+<button onclick="sendMessage()">
+Send
+</button>
+</div>
+<script>
+const API_URL =
+"https://recede-charred-sloppily.ngrok-free.dev";
+function scrollToBottom(){
+    window.scrollTo({
+        top:document.body.scrollHeight,
+        behavior:"smooth"
+    });
+}
+function addMessage(text,type){
+    const chat=document.getElementById("chat");
+    const msg=document.createElement("div");
+    msg.className="message "+type;
+    const bubble=document.createElement("div");
+    bubble.className="bubble";
+    bubble.innerText=text;
+    msg.appendChild(bubble);
+    chat.appendChild(msg);
+    setTimeout(scrollToBottom,100);
+    return msg;
+}
+async function sendMessage(){
+    const input=document.getElementById("message");
+    const text=input.value.trim();
+    if(!text) return;
+    addMessage(text,"user");
+    input.value="";
+    const loading =
+    addMessage("Thinking...","bot");
+    loading.querySelector(".bubble")
+           .classList.add("typing");
+    try{
+        const response = await fetch(
+            API_URL,
+            {
+                method:"POST",
+                headers:{
+                    "Content-Type":"application/json"
+                },
+                body:JSON.stringify({
+                    message:text
+                })
+            }
+        );
+        const data = await response.json();
+        loading.remove();
+        let reply = "No response received";
+        try{
+            reply =
+            data.outputs[0]
+            .outputs[0]
+            .results
+            .message
+            .text;
+        }
+        catch(e){
+            console.log(e);
+        }
+        addMessage(reply,"bot");
+    }
+    catch(error){
+        loading.remove();
+        addMessage(
+            "Unable to connect to the assistant. Please try again.",
+            "bot"
+        );
+        console.error(error);
+    }
+}
+document
+.getElementById("message")
+.addEventListener("keypress",function(e){
+    if(e.key==="Enter"){
+        sendMessage();
+    }
+});
+addMessage(
+"Hello! 👋 I am your DBMS Assistant. How can I help you today?",
+"bot"
+);
+</script>
+</body>
+</html>
